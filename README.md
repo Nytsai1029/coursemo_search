@@ -1,9 +1,12 @@
+<style>
+   *{font-family: Times New Roman;}
+   a{font-size:30px;border: solid 2px;padding:5px;border-radius:4px}
+</style>
 # Coursemo Search Assistant
----
 
 by Nytsai
 
-Install
+[InstallHere!!!](https://github.com/Nytsai1029/coursemo_search/raw/refs/heads/main/coursemo-search.user.js)
 
 
 ---
@@ -18,8 +21,8 @@ A Tampermonkey userscript that adds a floating control panel on `mo.coursemo.com
 - Results list with direct links to matching papers; “no result” messaging.
 
 ## Installation
-1) Install [Tampermonkey](https://www.tampermonkey.net/) or a compatible userscript manager.  
-2) Create a new script and paste the contents of `coursemo-search.user.js`.  
+1) Install **tampermonkey** or a compatible userscript manager.  
+2) Download the script from github.
 3) Save/enable the script and open any page under `https://mo.coursemo.com/`.
 
 ## Usage
