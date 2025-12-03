@@ -129,12 +129,37 @@
 
   const createStyles = () => {
     GM_addStyle(`
+      @keyframes cmGradientShift {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+      }
+      @keyframes cmPulse {
+        0% { box-shadow: 0 16px 40px rgba(6, 19, 43, 0.35), 0 0 0 0 rgba(76, 141, 255, 0.18); }
+        70% { box-shadow: 0 16px 40px rgba(6, 19, 43, 0.35), 0 0 0 16px rgba(76, 141, 255, 0); }
+        100% { box-shadow: 0 16px 40px rgba(6, 19, 43, 0.35), 0 0 0 0 rgba(76, 141, 255, 0); }
+      }
+      @keyframes cmAurora {
+        0% { transform: translateX(-30%) translateY(-10%) rotate(2deg); }
+        50% { transform: translateX(20%) translateY(10%) rotate(-2deg); }
+        100% { transform: translateX(-30%) translateY(-10%) rotate(2deg); }
+      }
+      @keyframes cmSheen {
+        0% { transform: translateX(-100%); opacity: 0; }
+        50% { opacity: 0.9; }
+        100% { transform: translateX(120%); opacity: 0; }
+      }
+      @keyframes cmResultReveal {
+        from { opacity: 0; transform: translateY(6px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
       #cm-search-toggle {
         position: fixed;
         bottom: 18px;
         left: 18px;
         z-index: 99999;
         background: linear-gradient(135deg, #101725, #1f3a5a);
+        background-size: 200% 200%;
         color: #f1f5ff;
         border: 1px solid rgba(255, 255, 255, 0.16);
         border-radius: 14px;
@@ -143,12 +168,24 @@
         font-family: "SF Pro Display", "Segoe UI", system-ui, -apple-system, sans-serif;
         box-shadow: 0 16px 40px rgba(6, 19, 43, 0.35);
         cursor: pointer;
-        transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease, filter 0.25s ease;
+        animation: cmGradientShift 6s ease infinite;
+        overflow: hidden;
+      }
+      #cm-search-toggle::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(120deg, rgba(255,255,255,0) 40%, rgba(255,255,255,0.18) 55%, rgba(255,255,255,0) 70%);
+        transform: translateX(-100%);
+        animation: cmSheen 4s ease-in-out infinite;
+        pointer-events: none;
       }
       #cm-search-toggle:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 20px 48px rgba(6, 19, 43, 0.45);
+        transform: translateY(-3px);
+        box-shadow: 0 20px 48px rgba(6, 19, 43, 0.55);
         opacity: 0.95;
+        filter: brightness(1.05);
       }
       #cm-search-panel {
         position: fixed;
@@ -171,10 +208,23 @@
         pointer-events: none;
         transition: all 0.25s ease;
       }
+      #cm-search-panel::before {
+        content: "";
+        position: absolute;
+        inset: -20% -30%;
+        background: radial-gradient(160px at 30% 20%, rgba(76, 141, 255, 0.25), transparent 45%),
+                    radial-gradient(180px at 70% 80%, rgba(76, 255, 210, 0.25), transparent 50%);
+        filter: blur(26px);
+        opacity: 0.8;
+        animation: cmAurora 14s ease-in-out infinite;
+        pointer-events: none;
+      }
       #cm-search-panel.cm-open {
         transform: translateY(0);
         opacity: 1;
         pointer-events: auto;
+        box-shadow: 0 30px 70px rgba(0, 0, 0, 0.55);
+        transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.24s ease, box-shadow 0.2s ease;
       }
       #cm-search-panel h3 {
         margin: 0 0 8px;
@@ -213,6 +263,7 @@
       #cm-search-panel button.cm-primary {
         width: 100%;
         background: linear-gradient(135deg, #4c8dff, #2b60e6);
+        background-size: 180% 180%;
         color: #fff;
         border: none;
         border-radius: 12px;
@@ -223,6 +274,7 @@
         box-shadow: 0 14px 36px rgba(43, 96, 230, 0.35);
         transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
         margin-bottom: 10px;
+        animation: cmPulse 4s ease infinite;
       }
       #cm-search-panel button.cm-primary:disabled {
         opacity: 0.7;
@@ -254,9 +306,17 @@
         border: 1px solid rgba(255, 255, 255, 0.07);
         margin-bottom: 8px;
         box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+        animation: cmResultReveal 0.35s ease;
+        transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
       }
       #cm-results .cm-result:last-child {
         margin-bottom: 0;
+      }
+      #cm-results .cm-result:hover {
+        transform: translateY(-2px);
+        border-color: rgba(159, 192, 255, 0.5);
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.3);
+        background: linear-gradient(135deg, rgba(76, 141, 255, 0.14), rgba(43, 96, 230, 0.08));
       }
       #cm-results a {
         color: #9fc0ff;

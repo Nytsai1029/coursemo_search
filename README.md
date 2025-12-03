@@ -45,16 +45,25 @@ A Tampermonkey userscript that adds a floating control panel on `mo.coursemo.com
 ## Release note:
 
 - **1.0.0**
+  
   Basic function searching with title
 - **1.0.1**
+  
   When searching with title, capitalized letters and spaces won't affect the result.
 - **1.0.2**
+  
   Improve the styles.
 - **1.0.3**
+  
   New feature of searching by keywords.
 - **1.1.0**
+  
   New feature of searching by creator id.
   New feature of pressing rightarrow or leftarrow key for switching to previous/next paper.
   Fix the bug that the paper searching button will appear on the printing window.
 - **1.1.1**
+  
   Use your own token instead of others.
+- **1.1.2**
+  
+  Improve styles.
