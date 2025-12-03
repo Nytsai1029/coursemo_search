@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Coursemo Search
 // @namespace    http://tampermonkey.net/
-// @version      1.1.0
+// @version      1.1.1
 // @description  Search Coursemo papers by ID range and title with an on-page control panel.
 // @match        https://mo.coursemo.com/*
 // @grant        GM_addStyle
@@ -69,12 +69,36 @@
         }
     });
   const API_BASE = "https://pct.coursemo.com/api/yarpc/com.coursemo.pct.ExamService.get?id=";
-  const AUTH_TOKEN =
-    "JWT eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3NjUyNTk0NzUsIm9wZW5pZCI6IjA4OWM0ZDdmOTQyZjQxMmFiMGJkMGI4YjdhN2MyZjEzIiwidXNlcm5hbWUiOiIxMzkyNDY1OTgxMiIsInBob25lIjoiMTM5MjQ2NTk4MTIifQ._G1uAvKmZEm25zZvD722IA-hiq8IfOCMeq6Zci8Egkg";
+  const LOCAL_KEYS = {
+    token: "coursemo_token",
+    user: "mo_user",
+  };
+  const normalizeToken = (raw) => {
+    if (!raw) return "";
+    return raw.startsWith("JWT ") ? raw : `JWT ${raw}`;
+  };
+  const loadLocalProfile = () => {
+    const token = normalizeToken(localStorage.getItem(LOCAL_KEYS.token) || "");
+    let user = {};
+    try {
+      user = JSON.parse(localStorage.getItem(LOCAL_KEYS.user) || "{}");
+    } catch (err) {
+      console.warn("Failed to parse mo_user from localStorage", err);
+    }
+    return {
+      token,
+      username: user.username || user.nickname || user.phone || "",
+      phone: user.phone || user.username || "",
+      userId: user.id,
+      openid: user.openid,
+      rawUser: user,
+    };
+  };
+  const userProfile = loadLocalProfile();
   const DEFAULT_HEADERS = {
     accept: "application/json, text/javascript, */*; q=0.01",
     "accept-language": "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,zh-TW;q=0.5,ja;q=0.4",
-    authorization: AUTH_TOKEN,
+    authorization: userProfile.token,
     "sec-ch-ua": '"Chromium";v="142", "Microsoft Edge";v="142", "Not_A Brand";v="99"',
     "sec-ch-ua-mobile": "?0",
     "sec-ch-ua-platform": '"macOS"',
@@ -432,6 +456,10 @@
   };
 
   const runSearch = async ({ start, end, title, keywords, creatorId, mode }) => {
+    if (!userProfile.token) {
+      updateProgress("Missing token. Please set localStorage.coursemo_token before searching.");
+      return;
+    }
     const ids = [];
     const step = start <= end ? 1 : -1;
     for (let i = start; step === 1 ? i <= end : i >= end; i += step) ids.push(i);

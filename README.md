@@ -31,7 +31,8 @@ A Tampermonkey userscript that adds a floating control panel on `mo.coursemo.com
 4) Click **Start search** to scan the range. Progress and results appear in the panel; each match links to its paper.
 
 ## Notes
-- The script uses the API token embedded in `coursemo-search.user.js`; update `AUTH_TOKEN` if it expires.  
+- The script reads your token once from `localStorage.coursemo_token` (raw JWT string, see `token.md` format). Set/refresh it in the browser before searching.  
+- User info is read once from `localStorage.mo_user` (JSON string containing id/username/phone/openid); no network calls are made to fetch it.  
 - Network requests hit `https://pct.coursemo.com/api/yarpc/com.coursemo.pct.ExamService.get?id=<ID>`; IDs are pulled from the range you enter.  
 - If your browser blocks the calls (CORS/auth), ensure you’re logged in and the token is valid.
 
@@ -55,3 +56,5 @@ A Tampermonkey userscript that adds a floating control panel on `mo.coursemo.com
   New feature of searching by creator id.
   New feature of pressing rightarrow or leftarrow key for switching to previous/next paper.
   Fix the bug that the paper searching button will appear on the printing window.
+- **1.1.1**
+  Use your own token instead of others.
