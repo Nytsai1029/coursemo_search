@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Coursemo Search
 // @namespace    http://tampermonkey.net/
-// @version      1.0.2
+// @version      1.1.0
 // @description  Search Coursemo papers by ID range and title with an on-page control panel.
 // @match        https://mo.coursemo.com/*
 // @grant        GM_addStyle
@@ -9,7 +9,65 @@
 
 (function () {
   "use strict";
+  // 监听键盘事件
+    document.addEventListener('keydown', function(event) {
+        // 检查是否按下了右箭头键 (keyCode: 39 或 ArrowRight)
+        if (event.key === 'ArrowRight' || event.keyCode === 39) {
+            event.preventDefault(); // 阻止默认行为
 
+            // 获取当前URL
+            const currentUrl = window.location.href;
+
+            // 使用正则表达式提取ID
+            const idMatch = currentUrl.match(/preview-questions\/(\d+)/);
+
+            if (idMatch && idMatch[1]) {
+                const currentId = parseInt(idMatch[1], 10);
+                const newId = currentId + 1;
+
+                // 构建新URL（保持其他参数不变）
+                const newUrl = currentUrl.replace(
+                    /preview-questions\/\d+/,
+                    `preview-questions/${newId}`
+                );
+
+                // 跳转到新URL
+                window.location.href = newUrl;
+
+                // 可选：在控制台输出信息
+                console.log(`ID从 ${currentId} 增加到 ${newId}，正在跳转...`);
+            } else {
+                console.warn('无法从URL中提取ID号');
+            }
+        }else if (event.key === 'ArrowLeft' || event.keyCode === 37) {
+            event.preventDefault(); // 阻止默认行为
+
+            // 获取当前URL
+            const currentUrl = window.location.href;
+
+            // 使用正则表达式提取ID
+            const idMatch = currentUrl.match(/preview-questions\/(\d+)/);
+
+            if (idMatch && idMatch[1]) {
+                const currentId = parseInt(idMatch[1], 10);
+                const newId = currentId - 1;
+
+                // 构建新URL（保持其他参数不变）
+                const newUrl = currentUrl.replace(
+                    /preview-questions\/\d+/,
+                    `preview-questions/${newId}`
+                );
+
+                // 跳转到新URL
+                window.location.href = newUrl;
+
+                // 可选：在控制台输出信息
+                console.log(`ID从 ${currentId} 减少到 ${newId}，正在跳转...`);
+            } else {
+                console.warn('无法从URL中提取ID号');
+            }
+        }
+    });
   const API_BASE = "https://pct.coursemo.com/api/yarpc/com.coursemo.pct.ExamService.get?id=";
   const AUTH_TOKEN =
     "JWT eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3NjUyNTk0NzUsIm9wZW5pZCI6IjA4OWM0ZDdmOTQyZjQxMmFiMGJkMGI4YjdhN2MyZjEzIiwidXNlcm5hbWUiOiIxMzkyNDY1OTgxMiIsInBob25lIjoiMTM5MjQ2NTk4MTIifQ._G1uAvKmZEm25zZvD722IA-hiq8IfOCMeq6Zci8Egkg";
@@ -72,8 +130,8 @@
         position: fixed;
         bottom: 68px;
         left: 18px;
-        width: 420px;
-        max-height: 560px;
+        width: 520px;
+        max-height: 620px;
         overflow: hidden;
         z-index: 99999;
         background: linear-gradient(160deg, #0d111a, #111a2a 40%, #152640 100%);
@@ -185,6 +243,12 @@
         color: #9aa6c5;
         text-align: center;
       }
+      @media print {
+        #cm-search-toggle,
+        #cm-search-panel {
+          display: none !important;
+        }
+      }
     `);
   };
 
@@ -215,19 +279,26 @@
       </div>
       <div class="cm-row">
         <div style="flex:1;">
-          <label for="cm-mode">Search mode</label>
-          <select id="cm-mode" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:8px 10px;color:#f6f8ff;font-size:13px;outline:none;">
-            <option value="keywords">Keywords only</option>
-            <option value="title">Title contains</option>
-          </select>
-        </div>
-      </div>
-      <div class="cm-row">
-        <div style="flex:1;">
-          <label for="cm-keywords">Keywords (comma or space separated)</label>
-          <input id="cm-keywords" type="text" placeholder="wave, physics, test" />
-        </div>
-      </div>
+      <label for="cm-mode">Search mode</label>
+      <select id="cm-mode" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:8px 10px;color:#f6f8ff;font-size:13px;outline:none;">
+        <option value="keywords">Keywords only</option>
+        <option value="title">Title contains</option>
+        <option value="creator">Creator ID only</option>
+      </select>
+    </div>
+  </div>
+  <div class="cm-row">
+    <div style="flex:1;">
+      <label for="cm-keywords">Keywords (comma or space separated)</label>
+      <input id="cm-keywords" type="text" placeholder="wave, physics, test" />
+    </div>
+  </div>
+  <div class="cm-row">
+    <div style="flex:1;">
+      <label for="cm-creator">Creator ID</label>
+      <input id="cm-creator" type="number" placeholder="e.g. 3308" />
+    </div>
+  </div>
       <div id="cm-progress">Idle</div>
       <button class="cm-primary" id="cm-search-btn">Start search</button>
       <div id="cm-results"><div class="cm-none">Waiting to start...</div></div>
@@ -249,6 +320,8 @@
       const title = panel.querySelector("#cm-title").value.trim();
       const keywords = panel.querySelector("#cm-keywords").value.trim();
       const mode = panel.querySelector("#cm-mode").value;
+      const creatorIdRaw = panel.querySelector("#cm-creator").value.trim();
+      const creatorId = creatorIdRaw ? Number(creatorIdRaw) : NaN;
       if (!Number.isFinite(start) || !Number.isFinite(end)) {
         updateProgress("Please fill start ID and end ID.");
         return;
@@ -261,7 +334,11 @@
         updateProgress("Please enter keywords when using keyword mode.");
         return;
       }
-      runSearch({ start, end, title, keywords, mode });
+      if (mode === "creator" && !Number.isFinite(creatorId)) {
+        updateProgress("Please enter a valid creator ID when using creator mode.");
+        return;
+      }
+      runSearch({ start, end, title, keywords, creatorId, mode });
     });
   };
 
@@ -277,7 +354,7 @@
     if (!state.matches.length) {
       const empty = document.createElement("div");
       empty.className = "cm-none";
-      empty.textContent = "No result for the current keywords.";
+      empty.textContent = "No results for the current search.";
       container.appendChild(empty);
       return;
     }
@@ -287,6 +364,7 @@
       card.innerHTML = `
         <div style="font-size:13px;font-weight:700;">${match.name}</div>
         <div style="font-size:12px;color:#b7c4e2;margin:3px 0 6px;">ID: ${match.id}</div>
+        <div style="font-size:12px;color:#9aa6c5;margin-bottom:6px;">Creator ID: ${match.creatorId ?? "N/A"}</div>
         <a href="${match.url}" target="_blank" rel="noopener">Open paper</a>
       `;
       container.appendChild(card);
@@ -307,7 +385,7 @@
     return data?.data;
   };
 
-  const searchIds = async (ids, { mode, title, keywords }, onProgress) => {
+  const searchIds = async (ids, { mode, title, keywords, creatorId }, onProgress) => {
     const matches = [];
     const maxConcurrent = 8;
     let cursor = 0;
@@ -317,18 +395,23 @@
         try {
           const paper = await fetchPaper(current);
           const name = paper?.name;
+          const createdBy = paper?.created_user_id;
           let isMatch = false;
-          if (name) {
+          if (mode === "creator") {
+            isMatch = Number(createdBy) === creatorId;
+          } else if (name) {
             if (mode === "title") {
               isMatch = titleMatch(name, title);
-            } else {
+            } else if (mode === "keywords") {
               isMatch = keywordMatch(name, keywords);
             }
           }
           if (isMatch) {
+            const displayName = name || "(no title)";
             matches.push({
               id: current,
-              name,
+              name: displayName,
+              creatorId: createdBy,
               url: `https://mo.coursemo.com/tool/preview-questions/${current}?_from=core`,
             });
           }
@@ -348,7 +431,7 @@
     return matches;
   };
 
-  const runSearch = async ({ start, end, title, keywords, mode }) => {
+  const runSearch = async ({ start, end, title, keywords, creatorId, mode }) => {
     const ids = [];
     const step = start <= end ? 1 : -1;
     for (let i = start; step === 1 ? i <= end : i >= end; i += step) ids.push(i);
@@ -358,7 +441,7 @@
     updateProgress(`Searching ${ids.length} IDs...`);
     document.querySelector("#cm-search-btn").disabled = true;
 
-    const matches = await searchIds(ids, { mode, title, keywords }, (progress) => {
+    const matches = await searchIds(ids, { mode, title, keywords, creatorId }, (progress) => {
       updateProgress(`Checked ${progress.checked}/${progress.total}`);
     });
 
